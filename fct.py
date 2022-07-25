@@ -227,7 +227,8 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
         'Munster':[11,13.5],
         'Calzone Choco':[6.5,6.5],
         'Calzone Choco Banane':[7.5,7.5],
-        'Calzone Choco Poire':[7.5,7.5]
+        'Calzone Choco Poire':[7.5,7.5],
+        'Burger':[11,15]
     }
 
     data = {
@@ -269,15 +270,19 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
 
     for element in data:
         if element['Votre Taille :'] == "Petite":
-            price = pizzas[element['Votre Pizza :']][0]
+            if element['Suppléments :'] != "":
+                price = pizzas[element['Votre Pizza :']][0]+1
+            else :
+                price = pizzas[element['Votre Pizza :']][0]
             commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price}€"
             petites.append(commande)
         else:
-            price = pizzas[element['Votre Pizza :']][1]
+            if element['Suppléments :'] != "":
+                price = pizzas[element['Votre Pizza :']][1]+1
+            else :
+                price = pizzas[element['Votre Pizza :']][1]
             commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price}€"
             grandes.append(commande)
-        if element['Suppléments :'] != "":
-            price = price + 1
 
         total = total + price
         

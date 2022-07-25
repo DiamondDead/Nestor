@@ -122,3 +122,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project
+creds.json
+webhook.json
+test.py

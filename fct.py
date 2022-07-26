@@ -1,4 +1,5 @@
 import datetime,time,requests,json,os,gspread
+from operator import index
 
 def wait_hour(HH,MM):
     while(True):
@@ -52,6 +53,7 @@ def Mar_Jeu_Pol(webhook,HH,MM,test_mode,creds):
     responses = client.open("Responses").worksheet('Resto Classique')
 
     data = responses.get_all_records()
+    data = multiResponses(data)
 
     participants_resto_1 = []
     choix = []
@@ -263,6 +265,8 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
 
     data = responses.get_all_records()
 
+    data = multiResponses(data)
+
     total_EEPI = 0
     total_Client = 0
     petites = []
@@ -368,15 +372,37 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
     else:
         print("Mode Test --> Réponses non suprimées")
 
-def test(creds):
+def multiResponses(data):
 
-    client = gspread.authorize(creds)
-    responses = client.open("Responses").worksheet('Pizza')
+    people = []
+    names = ['Stagiaire / Alternant','Externe (Elyotec, ...)','Client']
+    index_to_delete = []
 
-    data = responses.get_all_records()
+    for i in range(0,len(data)):
+        people.append(data[i]["Qui êtes-vous ?"])
 
-    for element in data:
-        nb = data.count(element["Qui êtes-vous ?"])
+    for i in range(0,len(data)):
+        current_name = data[i]["Qui êtes-vous ?"]
+        if current_name not in names:
+            names.append(current_name)
+            nb = people.count(current_name)
+            if nb>1:
+                indexs = [i for i, x in enumerate(people) if x == current_name]
+                indexs = indexs[0:-1]
+                for i in indexs:
+                    index_to_delete.append(i)
+        else :
+            pass
+    
+    for i in index_to_delete:
+        data[i] = None
+
+    res = []
+    for val in data:
+        if val != None:
+            res.append(val)
+
+    return res
 
     
         

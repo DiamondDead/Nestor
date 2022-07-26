@@ -367,6 +367,16 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
         responses.delete_rows(2,30)
     else:
         print("Mode Test --> Réponses non suprimées")
-    
 
+def test(creds):
+
+    client = gspread.authorize(creds)
+    responses = client.open("Responses").worksheet('Pizza')
+
+    data = responses.get_all_records()
+
+    for element in data:
+        nb = data.count(element["Qui êtes-vous ?"])
+
+    
         

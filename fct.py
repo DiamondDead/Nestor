@@ -1,4 +1,5 @@
 import datetime,time,requests,json,os,gspread
+from operator import index
 
 def wait_hour(HH,MM):
     while(True):
@@ -52,6 +53,7 @@ def Mar_Jeu_Pol(webhook,HH,MM,test_mode,creds):
     responses = client.open("Responses").worksheet('Resto Classique')
 
     data = responses.get_all_records()
+    data = multiResponses(data)
 
     participants_resto_1 = []
     choix = []
@@ -227,7 +229,8 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
         'Munster':[11,13.5],
         'Calzone Choco':[6.5,6.5],
         'Calzone Choco Banane':[7.5,7.5],
-        'Calzone Choco Poire':[7.5,7.5]
+        'Calzone Choco Poire':[7.5,7.5],
+        'Burger':[11,15]
     }
 
     data = {
@@ -262,36 +265,92 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
 
     data = responses.get_all_records()
 
-    total = 0
+    data = multiResponses(data)
+
+    total_EEPI = 0
+    total_Client = 0
     petites = []
+    petites_clients = []
     grandes = []
+    grandes_clients = []
+    commande_EEPI = []
+    commande_Clients = []
     commande_finale = []
 
     for element in data:
-        if element['Votre Taille :'] == "Petite":
-            price = pizzas[element['Votre Pizza :']][0]
-            commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price}€"
-            petites.append(commande)
-        else:
-            price = pizzas[element['Votre Pizza :']][1]
-            commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price}€"
-            grandes.append(commande)
-        if element['Suppléments :'] != "":
-            price = price + 1
+        if element['Qui êtes-vous ?'] == 'Client':
+            if element['Votre Taille :'] == "Petite":
+                if element['Suppléments :'] != "":
+                    price_Client = pizzas[element['Votre Pizza :']][0]+1
+                else :
+                    price_Client = pizzas[element['Votre Pizza :']][0]
+                commande = f"{element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price_Client}€"
+                petites_clients.append(commande)
+            else:
+                if element['Suppléments :'] != "":
+                    price_Client = pizzas[element['Votre Pizza :']][1]+1
+                else :
+                    price_Client = pizzas[element['Votre Pizza :']][1]
+                commande = f"{element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price_Client}€"
+                grandes_clients.append(commande)
+            total_Client = total_Client + price_Client
+        else : 
+            if element['Votre Taille :'] == "Petite":
+                if element['Suppléments :'] != "":
+                    price_EEPI = pizzas[element['Votre Pizza :']][0]+1
+                else :
+                    price_EEPI = pizzas[element['Votre Pizza :']][0]
+                commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price_EEPI}€"
+                petites.append(commande)
+            else:
+                if element['Suppléments :'] != "":
+                    price_EEPI = pizzas[element['Votre Pizza :']][1]+1
+                else :
+                    price_EEPI = pizzas[element['Votre Pizza :']][1]
+                commande = f"{element['Qui êtes-vous ?']} - {element['Votre Taille :']} {element['Votre Pizza :']} | Avec : {element['Suppléments :']} | Sans : {element['Sans : ']} | Total : {price_EEPI}€"
+                grandes.append(commande)
+            total_EEPI = total_EEPI + price_EEPI
+    
+    total = total_EEPI + total_Client
 
-        total = total + price
-        
+    
     for element in grandes:
-        commande_finale.append(element)
+        commande_EEPI.append(element)
     
     for element in petites:
+        commande_EEPI.append(element)
+
+    for element in grandes_clients:
+        commande_Clients.append(element)
+
+    for element in petites_clients:
+        commande_Clients.append(element)
+
+    commande_finale.append("---------- Commande EEPI ----------")
+    for element in commande_EEPI :
         commande_finale.append(element)
+    commande_finale.append(f"Nombre de pizzas EEPI : {len(commande_EEPI)}")
+    commande_finale.append(f"Total EEPI : {total_EEPI}€")
+
+    if len(commande_Clients)>0:
+        commande_finale.append("---------- Commande Client ----------")
+        for element in commande_Clients:
+            commande_finale.append(element)
+        commande_finale.append("DEMANDER FACTURE !")
+        commande_finale.append(f"Nombre de pizzas client : {len(commande_Clients)}")
+        commande_finale.append(f"Total client : {total_Client}€")
+        commande_finale.append("-----------------------------------")
+    else :
+        commande_finale.append("----------------------------------")
 
     result = ""
+
     for element in commande_finale:
         result = result + str(element)+"   \n   \n"
+
     
-    result = result + f"Nombre de pizza : {len(data)}   \n"
+    
+    result = result + f"Nombre total de pizzas : {len(data)}   \n"
     result = result + f"Total : {total}€"
 
     data = {
@@ -312,6 +371,38 @@ def Mer_Pol(webhook,HH,MM,test_mode,creds):
         responses.delete_rows(2,30)
     else:
         print("Mode Test --> Réponses non suprimées")
-    
 
+def multiResponses(data):
+
+    people = []
+    names = ['Stagiaire / Alternant','Externe (Elyotec, ...)','Client']
+    index_to_delete = []
+
+    for i in range(0,len(data)):
+        people.append(data[i]["Qui êtes-vous ?"])
+
+    for i in range(0,len(data)):
+        current_name = data[i]["Qui êtes-vous ?"]
+        if current_name not in names:
+            names.append(current_name)
+            nb = people.count(current_name)
+            if nb>1:
+                indexs = [i for i, x in enumerate(people) if x == current_name]
+                indexs = indexs[0:-1]
+                for i in indexs:
+                    index_to_delete.append(i)
+        else :
+            pass
+    
+    for i in index_to_delete:
+        data[i] = None
+
+    res = []
+    for val in data:
+        if val != None:
+            res.append(val)
+
+    return res
+
+    
         
